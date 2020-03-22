@@ -178,7 +178,7 @@ class RFDevice:
         self._sleep((lowpulses * self.tx_pulselength) / 1000000)
         return True
 
-    def enable_rx(self):
+    def enable_rx(self, on_receive_cb=None):
         """Enable RX, set up GPIO and add event detection."""
         if self.tx_enabled:
             _LOGGER.error("TX is enabled, not enabling RX")
@@ -188,6 +188,7 @@ class RFDevice:
             GPIO.setup(self.gpio, GPIO.IN)
             GPIO.add_event_detect(self.gpio, GPIO.BOTH)
             GPIO.add_event_callback(self.gpio, self.rx_callback)
+            self.on_receive_cb = on_receive_cb
             _LOGGER.debug("RX enabled")
         return True
 
@@ -213,6 +214,8 @@ class RFDevice:
                     for pnum in range(1, len(PROTOCOLS)):
                         if self._rx_waveform(pnum, self._rx_change_count, timestamp):
                             _LOGGER.debug("RX code " + str(self.rx_code))
+                            if self.on_receive_cb:
+                                self.on_receive_cb()
                             break
                     self._rx_repeat_count = 0
             self._rx_change_count = 0
